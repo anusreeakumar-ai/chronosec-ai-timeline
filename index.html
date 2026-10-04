@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChronoSec AI - 3D Google Maps Real Estate & Attack Flow</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Three.js (Used for tactical fallback and ballistic arcs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- jsPDF & AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    canvas { outline: none; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #060913; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500/30">
+
+  <!-- ================= AUTH VIEW ================= -->
+  <section id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4">
+    <div class="relative w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl shadow-cyan-950/40">
+      <div class="text-center space-y-2 mb-6">
+        <div class="inline-flex p-3 rounded-xl bg-red-950/60 border border-red-500/40 text-red-400 mb-1">
+          <i data-lucide="shield-alert" class="w-7 h-7 animate-pulse"></i>
+        </div>
+        <h1 class="text-xl font-extrabold text-white tracking-tight">ChronoSec AI 3D Real Estate SOC</h1>
+        <p class="text-xs text-slate-400 font-mono">Geospatial Forensic Intelligence Portal</p>
+      </div>
+
+      <form id="loginForm" onsubmit="handleAuthLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">Investigator ID</label>
+          <input type="text" id="loginUsername" required value="Agent Alex Mercer" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 font-mono transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">Recipient Email (Receives Report)</label>
+          <input type="email" id="loginEmail" required placeholder="name@company.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-cyan-300 focus:outline-none focus:border-cyan-500 font-mono transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">Optional Google Maps API Key</label>
+          <input type="password" id="loginGmapsKey" placeholder="Paste Key for 3D Photorealistic View" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-amber-300 focus:outline-none focus:border-cyan-500 font-mono transition" />
+          <span class="text-[10px] text-slate-500 block mt-1">If blank, standard 3D WebGL satellite visualizer activates automatically.</span>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-semibold text-xs tracking-wide uppercase transition shadow-lg shadow-cyan-900/40 flex items-center justify-center gap-2 mt-2">
+          <i data-lucide="map" class="w-4 h-4"></i> Enter 3D Forensic Operations
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= TOP GLOBAL NAVBAR ================= -->
+  <header id="main-header" class="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40 hidden">
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('home')">
+      <div class="p-2 rounded-lg bg-red-950/70 border border-red-500/40 text-red-400">
+        <i data-lucide="shield-alert" class="w-5 h-5 animate-pulse"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs uppercase font-mono px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800 font-semibold tracking-wide">
+            INCIDENT: APT-8094
+          </span>
+          <h1 class="text-base font-bold text-white tracking-tight">
+            ChronoSec AI 3D Real Estate Map
+          </h1>
+        </div>
+        <p class="text-[11px] text-slate-400 font-mono">Real-world Terrain • Sender-to-Receiver Telemetry</p>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <nav class="flex items-center space-x-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+      <button id="nav-home" onclick="navigateTo('home')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <i data-lucide="home" class="w-3.5 h-3.5"></i> Overview
+      </button>
+      <button id="nav-timeline" onclick="navigateTo('timeline')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <i data-lucide="map" class="w-3.5 h-3.5"></i> 3D Maps Real Estate
+      </button>
+      <button id="nav-graph" onclick="navigateTo('graph')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <i data-lucide="network" class="w-3.5 h-3.5"></i> Attack Graph & Flows
+      </button>
+      <button id="nav-evidence" onclick="navigateTo('evidence')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <i data-lucide="folder-plus" class="w-3.5 h-3.5"></i> Evidence Vault
+      </button>
+      <button id="nav-profile" onclick="navigateTo('profile')" class="nav-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <i data-lucide="user" class="w-3.5 h-3.5"></i> Profile
+      </button>
+    </nav>
+
+    <!-- ACTIONS -->
+    <div class="flex items-center gap-3 text-xs font-mono">
+      <button 
+        id="btnDispatchTop"
+        onclick="generateAndSendIncidentPDF()" 
+        class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition"
+      >
+        <i data-lucide="send" class="w-3.5 h-3.5"></i> Send Report to Email
+      </button>
+      <div class="h-6 w-px bg-slate-800 mx-0.5"></div>
+      <div onclick="navigateTo('profile')" class="flex items-center gap-2 bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-full cursor-pointer hover:border-cyan-500 transition">
+        <div id="userAvatarText" class="w-6 h-6 rounded-full bg-cyan-600 text-white flex items-center justify-center font-bold text-[10px]">AM</div>
+        <span id="navBarUsername" class="text-slate-300 font-sans font-semibold text-xs hidden md:inline">Alex Mercer</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="dispatchToast" class="fixed bottom-6 right-6 z-50 bg-slate-900 border border-cyan-500/60 rounded-xl p-4 shadow-2xl flex items-center space-x-3 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none">
+    <div class="p-2 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800">
+      <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+    </div>
+    <div>
+      <h4 class="text-xs font-bold text-white font-mono uppercase tracking-wide">Dossier Dispatched</h4>
+      <p id="toastMessage" class="text-[11px] text-slate-300 font-sans">Full dossier sent & downloaded successfully.</p>
+    </div>
+  </div>
+
+  <!-- ================= PAGE 1: HOME / OVERVIEW ================= -->
+  <section id="page-home" class="page-view flex-1 p-8 max-w-7xl mx-auto w-full space-y-8 hidden">
+    <div class="bg-gradient-to-r from-slate-900 to-slate-900/60 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+      <div class="max-w-2xl space-y-2">
+        <span class="px-2.5 py-0.5 rounded-full bg-red-950 text-red-400 text-xs font-mono border border-red-800">High Priority Incident</span>
+        <h2 class="text-2xl font-extrabold text-white">Active Incursion: Cross-Border Physical & Cloud Infrastructure</h2>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Real estate infrastructure across Bucharest (Adversary Jumpbox), Frankfurt (Edge Gateway DMZ), Dallas Corporate Data Center, and St. Petersburg (C2 Server) have been correlated.
+        </p>
+        <div class="pt-3 flex flex-wrap gap-3">
+          <button onclick="navigateTo('timeline')" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg text-xs flex items-center gap-2 transition">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> View 3D Real Estate Map
+          </button>
+          <button onclick="generateAndSendIncidentPDF()" class="px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 font-medium rounded-lg text-xs flex items-center gap-2 transition">
+            <i data-lucide="send" class="w-4 h-4"></i> Dispatch PDF to Email
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- METRICS -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+        <span class="text-xs text-slate-400 font-mono uppercase">Monitored Facilities</span>
+        <div class="text-2xl font-bold font-mono text-cyan-400 mt-1">4 Regions</div>
+        <span class="text-[11px] text-emerald-400 mt-1 block">RO, DE, USA, RU Physical Nodes</span>
+      </div>
+      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+        <span class="text-xs text-slate-400 font-mono uppercase">Egress Data Burst</span>
+        <div class="text-2xl font-bold font-mono text-red-400 mt-1">3.2 GB</div>
+        <span class="text-[11px] text-slate-400 mt-1 block">fin-srv-02 → 198.51.100.4</span>
+      </div>
+      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+        <span class="text-xs text-slate-400 font-mono uppercase">Kill Chain Phases</span>
+        <div class="text-2xl font-bold font-mono text-emerald-400 mt-1" id="homeChainCount">5 Stages</div>
+        <span class="text-[11px] text-slate-400 mt-1 block">Full Reconstruction Complete</span>
+      </div>
+      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+        <span class="text-xs text-slate-400 font-mono uppercase">Evidence Uploads</span>
+        <div class="text-2xl font-bold font-mono text-purple-400 mt-1" id="homeEvidenceCount">2 Uploaded</div>
+        <span class="text-[11px] text-cyan-400 mt-1 block cursor-pointer" onclick="navigateTo('evidence')">+ Upload more evidence</span>
+      </div>
+    </div>
+
+    <!-- INCIDENT TABLE -->
+    <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <i data-lucide="layers" class="w-4 h-4 text-cyan-400"></i> Entity-to-Entity Data Transfers
+        </h3>
+        <button onclick="generateAndSendIncidentPDF()" class="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> Download PDF Copy
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
+            <tr>
+              <th class="p-3">Event ID</th>
+              <th class="p-3">Data Sender (Source)</th>
+              <th class="p-3">Data Receiver (Target)</th>
+              <th class="p-3">Transfer Protocol</th>
+              <th class="p-3">Real Estate Facility</th>
+              <th class="p-3">Payload Severity</th>
+            </tr>
+          </thead>
+          <tbody id="homeTimelineRows" class="divide-y divide-slate-800/60 text-slate-300">
+            <!-- Populated via script -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PAGE 2: 3D GOOGLE MAPS REAL ESTATE & VECTOR ================= -->
+  <section id="page-timeline" class="page-view hidden flex-1 grid grid-cols-12 overflow-hidden min-h-[calc(100vh-65px)]">
+    
+    <!-- LEFT: MAP CONTAINER (GOOGLE MAPS VECTOR / 3D CANVAS) -->
+    <div class="col-span-12 lg:col-span-8 border-r border-slate-800 relative bg-black flex flex-col">
+      <div id="googleMapContainer" class="w-full h-full min-h-[480px]"></div>
+
+      <!-- Controls Overlay -->
+      <div class="absolute top-4 left-4 bg-slate-900/90 backdrop-blur px-3 py-2 rounded-xl border border-slate-800 flex items-center gap-2 pointer-events-auto">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+        <div class="text-xs font-mono">
+          <div class="text-white font-bold" id="mapModeIndicator">3D Real Estate Terrain View</div>
+          <div class="text-[10px] text-slate-400" id="mapModeSub">Tilt: 65° | Satellite Mesh Active</div>
+        </div>
+      </div>
+
+      <!-- Sender to Receiver Transfer Badge in 3D View -->
+      <div class="absolute top-4 right-4 bg-slate-950/90 backdrop-blur p-3 rounded-xl border border-slate-800 max-w-sm pointer-events-auto text-xs font-mono">
+        <div class="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center justify-between">
+          <span>Active Data Transfer</span>
+          <span id="activeHopBadge" class="text-cyan-400">Hop 1/5</span>
+        </div>
+        <div class="text-white font-bold text-xs" id="activeTransferTitle">203.0.113.195 ➔ 192.168.10.45</div>
+        <div class="text-slate-300 text-[11px] mt-1" id="activeTransferProtocol">Protocol: HTTP POST | Port 443 | Volume: 4.8 KB</div>
+      </div>
+
+      <!-- Bottom Step Navigation -->
+      <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+        <div class="bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 pointer-events-auto">
+          Location: <span id="globeFocusName" class="text-cyan-400 font-bold">Bucharest, RO</span>
+        </div>
+
+        <div class="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 pointer-events-auto">
+          <button onclick="stepCase(-1)" class="p-1 hover:bg-slate-800 rounded text-slate-300"><i data-lucide="skip-back" class="w-4 h-4"></i></button>
+          <span id="stepCounter" class="text-xs font-mono px-2 text-cyan-300 font-bold">Hop 1/5</span>
+          <button onclick="stepCase(1)" class="p-1 hover:bg-slate-800 rounded text-slate-300"><i data-lucide="skip-forward" class="w-4 h-4"></i></button>
+          <div class="w-px h-4 bg-slate-700 mx-1"></div>
+          <button id="btnPlayStory" onclick="toggleStoryPlayback()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 rounded text-white text-xs font-medium flex items-center gap-1">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Play Route
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SENDER-TO-RECEIVER INTEL DETAILS & PROGRESSION -->
+    <div class="col-span-12 lg:col-span-4 p-6 overflow-y-auto space-y-4 bg-slate-900/20">
+      <div class="border-b border-slate-800 pb-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-white flex items-center gap-2">
+          <i data-lucide="arrow-left-right" class="w-4 h-4 text-cyan-400"></i> Who is Transferring Data to Whom?
+        </h2>
+        <span class="text-xs text-slate-400 font-mono">Chronological Host-to-Host Pipeline</span>
+      </div>
+
+      <div class="space-y-3" id="timelineCardsContainer">
+        <!-- Dynamic Progression Cards with detailed SENDER & RECEIVER blocks -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PAGE 3: ATTACK GRAPH & EXPLAINABILITY ================= -->
+  <section id="page-graph" class="page-view hidden flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div>
+        <h2 class="text-base font-bold text-white uppercase tracking-tight flex items-center gap-2">
+          <i data-lucide="network" class="w-5 h-5 text-cyan-400"></i> Lateral Data Flow Diagram & Explainability
+        </h2>
+        <p class="text-xs text-slate-400 font-mono mt-0.5">Physical facilities, virtual endpoints, and byte transmission reasoning</p>
+      </div>
+      <button onclick="exportGraphData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-mono flex items-center gap-1.5">
+        <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Flow Graph
+      </button>
+    </div>
+
+    <!-- SIDE-BY-SIDE GRAPH AND EXPLANATION -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[550px]">
+      
+      <!-- Interactive SVG Topology Graph (7 Cols) -->
+      <div class="col-span-12 lg:col-span-7 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
+        <div class="flex justify-between items-center text-xs font-mono mb-2">
+          <span class="text-slate-400 uppercase">Real Estate Facility Topology</span>
+          <span class="text-cyan-400">Active Pipeline Links</span>
+        </div>
+
+        <div class="w-full flex-1 flex items-center justify-center">
+          <svg viewBox="0 0 700 400" class="w-full h-full max-h-[460px]">
+            <line x1="80" y1="200" x2="220" y2="200" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 2" />
+            <line x1="220" y1="200" x2="360" y2="120" stroke="#06b6d4" stroke-width="2" />
+            <line x1="360" y1="120" x2="500" y2="200" stroke="#a855f7" stroke-width="2" />
+            <line x1="360" y1="120" x2="500" y2="300" stroke="#10b981" stroke-width="2" />
+            <line x1="500" y1="300" x2="620" y2="300" stroke="#ef4444" stroke-width="2.5" />
+
+            <text x="145" y="190" fill="#f87171" font-size="10" font-family="monospace" text-anchor="middle">RO ➔ DE (HTTP)</text>
+            <text x="275" y="150" fill="#38bdf8" font-size="10" font-family="monospace" text-anchor="middle">Local (w3wp ➔ PS)</text>
+            <text x="440" y="150" fill="#c084fc" font-size="10" font-family="monospace" text-anchor="middle">DE ➔ USA (TGS 0x17)</text>
+            <text x="410" y="240" fill="#34d399" font-size="10" font-family="monospace" text-anchor="middle">DE ➔ USA (SMB ADMIN$)</text>
+            <text x="560" y="290" fill="#f87171" font-size="10" font-family="monospace" text-anchor="middle">USA ➔ RU (3.2GB TLS)</text>
+
+            <g class="cursor-pointer" onclick="selectGraphNode('attacker')">
+              <circle cx="80" cy="200" r="28" fill="#1e1b4b" stroke="#ef4444" stroke-width="2" />
+              <text x="80" y="204" fill="#fca5a5" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">SENDER 1</text>
+              <text x="80" y="240" fill="#94a3b8" font-size="9" font-family="monospace" text-anchor="middle">Bucharest RO</text>
+            </g>
+
+            <g class="cursor-pointer" onclick="selectGraphNode('gateway')">
+              <circle cx="220" cy="200" r="28" fill="#132a3e" stroke="#06b6d4" stroke-width="2" />
+              <text x="220" y="204" fill="#67e8f9" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">GATEWAY</text>
+              <text x="220" y="240" fill="#94a3b8" font-size="9" font-family="monospace" text-anchor="middle">Frankfurt DE</text>
+            </g>
+
+            <g class="cursor-pointer" onclick="selectGraphNode('web')">
+              <circle cx="360" cy="120" r="30" fill="#172554" stroke="#3b82f6" stroke-width="2" />
+              <text x="360" y="124" fill="#93c5fd" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">edge-web-01</text>
+              <text x="360" y="165" fill="#94a3b8" font-size="9" font-family="monospace" text-anchor="middle">Frankfurt Node</text>
+            </g>
+
+            <g class="cursor-pointer" onclick="selectGraphNode('dc')">
+              <circle cx="500" cy="200" r="28" fill="#3b0764" stroke="#a855f7" stroke-width="2" />
+              <text x="500" y="204" fill="#d8b4fe" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">corp-dc-01</text>
+              <text x="500" y="240" fill="#94a3b8" font-size="9" font-family="monospace" text-anchor="middle">Dallas DC (USA)</text>
+            </g>
+
+            <g class="cursor-pointer" onclick="selectGraphNode('target')">
+              <circle cx="500" cy="300" r="28" fill="#064e3b" stroke="#10b981" stroke-width="2" />
+              <text x="500" y="304" fill="#6ee7b7" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">fin-srv-02</text>
+              <text x="500" y="340" fill="#94a3b8" font-size="9" font-family="monospace" text-anchor="middle">Dallas Storage</text>
+            </g>
+
+            <g class="cursor-pointer" onclick="selectGraphNode('c2')">
+              <circle cx="620" cy="300" r="28" fill="#450a0a" stroke="#ef4444" stroke-width="2" />
+              <text x="620" y="304" fill="#fca5a5" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">RECEIVER 5</text>
+              <text x="620" y="340" fill="#94a3b8" font-size="9" font-family="monospace" text-anchor="middle">St. Petersburg</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="text-[11px] font-mono text-slate-500 text-center pt-2 border-t border-slate-900">
+          Click nodes to inspect Who is Transferring Data, Protocols, and Volume
+        </div>
+      </div>
+
+      <!-- Explainability Diagnostics (5 Cols) -->
+      <div class="col-span-12 lg:col-span-5 bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4 flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <i data-lucide="cpu" class="w-4 h-4"></i> Data Flow Diagnostics
+            </h3>
+            <span id="selectedNodeBadge" class="text-xs font-mono font-bold text-cyan-400">edge-web-01</span>
+          </div>
+
+          <!-- SENDER & RECEIVER BOX -->
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 font-mono text-xs space-y-1.5">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Origin / Sender:</span>
+              <span id="flowSenderText" class="text-amber-400 font-bold">203.0.113.195 (Bucharest, RO)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Destination / Receiver:</span>
+              <span id="flowReceiverText" class="text-cyan-400 font-bold">192.168.10.45 (Frankfurt, DE)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Payload Volume:</span>
+              <span id="flowVolumeText" class="text-emerald-400 font-bold">4.8 KB Buffer Overflow</span>
+            </div>
+          </div>
+
+          <div>
+            <span class="text-[10px] text-slate-500 uppercase font-mono block">Why Did the Engine Cluster This Hop?</span>
+            <p id="graphExplainWhy" class="text-xs text-slate-300 font-mono mt-1 bg-slate-950 p-3 rounded-lg border border-slate-800 leading-relaxed">
+              Process lineage inspection proved w3wp.exe spawned an obfuscated PowerShell worker. The socket connection opened SMB port 445 directly targeting fin-srv-02 with matching session credentials within 74s of inbound exploit.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-500 text-[10px] block">Clock Drift Offset</span>
+              <span id="graphExplainSkew" class="text-amber-400 font-bold">-1.04s NTP Adjust</span>
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-500 text-[10px] block">Confidence Level</span>
+              <span id="graphExplainConf" class="text-emerald-400 font-bold">98.4% (ECS Schema)</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="navigateTo('evidence')" class="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Attach Forensic PCAP to this Hop
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= PAGE 4: EVIDENCE VAULT ================= -->
+  <section id="page-evidence" class="page-view hidden flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div>
+        <h2 class="text-base font-bold text-white uppercase tracking-tight flex items-center gap-2">
+          <i data-lucide="folder-plus" class="w-5 h-5 text-cyan-400"></i> Evidence Vault & Flow Synthesizer
+        </h2>
+        <p class="text-xs text-slate-400 font-mono mt-0.5">Upload packet captures, screenshots, or memory traces to integrate new senders and receivers</p>
+      </div>
+      <button onclick="synthesizeChainFromEvidence()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg text-xs font-mono flex items-center gap-2 shadow-sm transition">
+        <i data-lucide="zap" class="w-4 h-4"></i> Synthesize Chain from Evidence
+      </button>
+    </div>
+
+    <!-- UPLOADER -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="col-span-12 lg:col-span-4 bg-slate-900/40 border border-slate-800 rounded-xl p-5 space-y-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Add New Evidence Artifact</h3>
+        
+        <div>
+          <label class="text-[11px] font-mono text-slate-400 block mb-1">Artifact Title</label>
+          <input type="text" id="evidenceTitleInput" placeholder="e.g., Wireshark Packet Dump" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <div>
+          <label class="text-[11px] font-mono text-slate-400 block mb-1">Kill Chain Stage Association</label>
+          <select id="evidenceStageInput" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+            <option value="Initial Access">Initial Access (T1190)</option>
+            <option value="Execution">Execution (T1059)</option>
+            <option value="Privilege Escalation">Privilege Escalation (T1078)</option>
+            <option value="Lateral Movement">Lateral Movement (T1021)</option>
+            <option value="Exfiltration">Exfiltration (T1567)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[11px] font-mono text-slate-400 block mb-1">Data Flow Finding</label>
+          <textarea id="evidenceDescInput" rows="3" placeholder="Identified 192.168.10.45 transmitting SMB packets to 192.168.20.12..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"></textarea>
+        </div>
+
+        <div>
+          <label class="text-[11px] font-mono text-slate-400 block mb-1">Upload File (Image / PCAP)</label>
+          <input type="file" id="evidenceFileInput" accept="image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-mono file:bg-slate-800 file:text-cyan-400 hover:file:bg-slate-700" />
+        </div>
+
+        <button onclick="addEvidenceItem()" class="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add to Evidence Vault
+        </button>
+      </div>
+
+      <div class="col-span-12 lg:col-span-8 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Collected Case Evidence (<span id="evidenceCount">2</span> Items)</h3>
+        <div id="evidenceGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Dynamic Evidence Cards -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PAGE 5: ANALYST PROFILE ================= -->
+  <section id="page-profile" class="page-view hidden flex-1 p-8 max-w-5xl mx-auto w-full space-y-6">
+    <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-6 gap-4">
+      <div class="flex items-center space-x-4">
+        <div id="profileAvatarBig" class="w-16 h-16 rounded-full bg-cyan-600/30 border-2 border-cyan-500 flex items-center justify-center text-xl font-bold text-cyan-300">
+          AM
+        </div>
+        <div>
+          <h2 id="profileUsername" class="text-xl font-bold text-white">Agent Alex Mercer</h2>
+          <p id="profileEmail" class="text-xs text-cyan-400 font-mono">alex.mercer@cyber-defense.gov</p>
+          <div class="flex flex-wrap items-center gap-2 mt-2">
+            <span id="profileClearanceTag" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-mono">Tier 3: Incident Commander</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 text-[10px] font-mono">Status: Authenticated</span>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="generateAndSendIncidentPDF()" class="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition">
+        <i data-lucide="send" class="w-4 h-4"></i> Send Report to Email
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+        <span class="text-xs text-slate-400 font-mono uppercase">Assigned Case</span>
+        <div class="text-lg font-bold text-white mt-1">APT-8094: Data Egress</div>
+        <span class="text-xs text-cyan-400 mt-1 block">Active Investigation</span>
+      </div>
+      <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+        <span class="text-xs text-slate-400 font-mono uppercase">Reconstructed Incidents</span>
+        <div class="text-lg font-bold text-white mt-1">39 Cases</div>
+        <span class="text-xs text-emerald-400 mt-1 block">99.4% Accuracy Rate</span>
+      </div>
+      <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+        <span class="text-xs text-slate-400 font-mono uppercase">Target Defense Region</span>
+        <div class="text-lg font-bold text-white mt-1">Frankfurt & Dallas</div>
+        <span class="text-xs text-amber-400 mt-1 block">Cross-Border Cloud DMZ</span>
+      </div>
+    </div>
+
+    <div class="pt-2">
+      <button onclick="handleLogout()" class="px-4 py-2 bg-slate-800 hover:bg-red-950/80 hover:text-red-400 text-slate-300 border border-slate-700 rounded-lg text-xs font-mono transition flex items-center gap-1.5">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Terminate Security Session
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    // --- SESSION STATE ---
+    let currentUser = {
+      username: "Agent Alex Mercer",
+      email: "",
+      clearance: "Tier 3: Incident Commander",
+      gmapsKey: ""
+    };
+
+    // --- SENDER-TO-RECEIVER INCIDENT DATASET WITH GEOLOCATION REAL ESTATE ---
+    let incidentData = [
+      {
+        id: "EVT-01",
+        time: "2026-10-03 14:12:08 UTC",
+        stage: "Initial Access",
+        technique: "T1190 - Exploit Public App",
+        severity: "CRITICAL",
+        confidence: "98.4%",
+        geo: { lat: 44.4268, lon: 26.1025, name: "Bucharest, Romania (Adversary Jumpbox)" },
+        targetGeo: { lat: 50.1109, lon: 8.6821, name: "Frankfurt, Germany (Perimeter Web Gateway)" },
+        sender: "203.0.113.195 (External Threat Actor)",
+        receiver: "192.168.10.45:443 (edge-web-01, DMZ Facility)",
+        protocol: "HTTP POST /api/v1/upload",
+        volume: "4.8 KB Buffer Overflow Payload",
+        summary: "Adversary 203.0.113.195 sent raw memory heap spray payload to public endpoint /api/v1/upload on edge-web-01 in Frankfurt.",
+        rawLog: "SRC=203.0.113.195 DST=192.168.10.45 PROTO=TCP DPT=443 PATH=/api/v1/upload EXPLOIT_SIG=T1190",
+        explain: "Gateway Palo Alto firewall flagged byte signature matching known memory heap overflow."
+      },
+      {
+        id: "EVT-02",
+        time: "2026-10-03 14:13:22 UTC",
+        stage: "Execution",
+        technique: "T1059.001 - PowerShell Ingestion",
+        severity: "HIGH",
+        confidence: "96.1%",
+        geo: { lat: 50.1109, lon: 8.6821, name: "Frankfurt, Germany (DMZ Node)" },
+        targetGeo: { lat: 50.1109, lon: 8.6821, name: "Frankfurt, Germany (DMZ Node)" },
+        sender: "w3wp.exe [PID: 2810] (IIS Web Process)",
+        receiver: "powershell.exe [PID: 4102] (Under account: www-data)",
+        protocol: "Local IPC / Process Spawning",
+        volume: "1.2 KB Base64 Flag Payload",
+        summary: "Compromised IIS web daemon w3wp.exe spawned child process powershell.exe with base64 encoded flag payload.",
+        rawLog: "EventID=1 Image=powershell.exe CommandLine=\"-enc SUVY...\" Parent=w3wp.exe User=www-data",
+        explain: "Child process spawned by IIS web daemon within 74 seconds of inbound perimeter exploit."
+      },
+      {
+        id: "EVT-03",
+        time: "2026-10-03 14:18:45 UTC",
+        stage: "Privilege Escalation",
+        technique: "T1078 - Kerberoasting Ticket Request",
+        severity: "HIGH",
+        confidence: "94.5%",
+        geo: { lat: 50.1109, lon: 8.6821, name: "Frankfurt, Germany (DMZ Gateway)" },
+        targetGeo: { lat: 32.7767, lon: -96.7970, name: "Dallas, Texas, USA (Corp Domain Controller)" },
+        sender: "192.168.10.45 (edge-web-01 in Frankfurt)",
+        receiver: "192.168.1.250:88 (corp-dc-01 in Dallas DC)",
+        protocol: "Kerberos TGS-REQ (Port 88)",
+        volume: "512 Bytes RC4-HMAC Ticket",
+        summary: "Compromised edge-web-01 transferred an anomalous Kerberos TGS request to corp-dc-01 targeting service account svc-backup.",
+        rawLog: "EventID=4769 Account=svc-backup@CORP.LOCAL Encryption=0x17 ClientAddress=192.168.10.45",
+        explain: "Originating internal IP corresponds directly to compromised web host edge-web-01 requesting weak encryption."
+      },
+      {
+        id: "EVT-04",
+        time: "2026-10-03 14:31:10 UTC",
+        stage: "Lateral Movement",
+        technique: "T1021.002 - SMB Admin Shares",
+        severity: "CRITICAL",
+        confidence: "97.8%",
+        geo: { lat: 50.1109, lon: 8.6821, name: "Frankfurt, Germany (Compromised Web)" },
+        targetGeo: { lat: 32.7767, lon: -96.7970, name: "Dallas, Texas, USA (Finance File Storage)" },
+        sender: "192.168.10.45 (edge-web-01)",
+        receiver: "192.168.20.12:445 (fin-srv-02 ADMIN$ Share)",
+        protocol: "SMBv2 (TCP Port 445)",
+        volume: "142 KB Binary Payload (svc_runner.exe)",
+        summary: "Adversary transferred remote binary payload directly into \\\\fin-srv-02\\ADMIN$ over SMB using compromised svc-backup credentials.",
+        rawLog: "192.168.10.45:49152 -> 192.168.20.12:445 (SMB) FileCreate \\\\fin-srv-02\\ADMIN$\\svc_runner.exe",
+        explain: "Administrative share file writes authenticated via credentials extracted during Kerberoasting."
+      },
+      {
+        id: "EVT-05",
+        time: "2026-10-03 14:48:52 UTC",
+        stage: "Exfiltration",
+        technique: "T1567 - Encrypted Egress Transfer",
+        severity: "CRITICAL",
+        confidence: "99.1%",
+        geo: { lat: 32.7767, lon: -96.7970, name: "Dallas, Texas, USA (Finance Storage)" },
+        targetGeo: { lat: 59.9343, lon: 30.3351, name: "St. Petersburg, Russia (C2 Egress Drop)" },
+        sender: "192.168.20.12 (fin-srv-02 in Dallas)",
+        receiver: "198.51.100.4:8443 (Foreign C2 Node)",
+        protocol: "TLS Encrypted Stream (TCP Port 8443)",
+        volume: "3.2 GB High-Speed Burst (239,401 Packets)",
+        summary: "3.2 GB of confidential financial records transmitted from Dallas internal server to external Russian C2 drop.",
+        rawLog: "AWS-VPC-Flow: src=192.168.20.12 dst=198.51.100.4 dport=8443 bytes=3435973836 status=OK",
+        explain: "Outbound transfer exceeds normal egress baseline by 4000% transmitted to unknown foreign IP."
+      }
+    ];
+
+    let evidenceStore = [
+      {
+        id: "EV-101",
+        title: "Wireshark Inbound HTTP Heap Spray",
+        stage: "Initial Access",
+        desc: "Sender 203.0.113.195 transmitted raw NOP sled and shellcode injection to 192.168.10.45:443.",
+        img: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=60"
+      },
+      {
+        id: "EV-102",
+        title: "Kerberos TGS RC4-HMAC Ticket Extraction",
+        stage: "Privilege Escalation",
+        desc: "Sender 192.168.10.45 requested offline hash ticket from DC 192.168.1.250.",
+        img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=500&auto=format&fit=crop&q=60"
+      }
+    ];
+
+    let currentStepIndex = 0;
+    let isPlaying = false;
+    let playInterval = null;
+
+    // --- MAP ENGINE CONTROLLER (GOOGLE MAPS 3D VECTOR & FALLBACK) ---
+    let gmap = null;
+    let fallbackScene, fallbackCamera, fallbackRenderer, fallbackControls, earthMesh;
+    let movingPackets = [];
+
+    function initMapEngine() {
+      if (currentUser.gmapsKey) {
+        loadGoogleMapsScript(currentUser.gmapsKey);
+      } else {
+        initTacticalFallbackMap();
+      }
+    }
+
+    function loadGoogleMapsScript(apiKey) {
+      document.getElementById("mapModeIndicator").textContent = "Google Maps Photorealistic 3D";
+      document.getElementById("mapModeSub").textContent = "Google Cloud Vector WebGL Active";
+
+      window.initGmapCallback = function() {
+        const container = document.getElementById("googleMapContainer");
+        const initPos = { lat: incidentData[0].geo.lat, lng: incidentData[0].geo.lon };
+
+        try {
+          // Initialize Google Vector Map with 3D tilt and heading
+          gmap = new google.maps.Map(container, {
+            center: initPos,
+            zoom: 14,
+            tilt: 65,
+            heading: 45,
+            mapTypeId: 'hybrid',
+            disableDefaultUI: true,
+            zoomControl: true
+          });
+
+          // Draw markers and transfer lines
+          incidentData.forEach((evt, idx) => {
+            const marker = new google.maps.Marker({
+              position: { lat: evt.geo.lat, lng: evt.geo.lon },
+              map: gmap,
+              title: `${evt.stage}: ${evt.sender} ➔ ${evt.receiver}`,
+              label: `${idx + 1}`
+            });
+
+            marker.addListener("click", () => selectStep(idx));
+
+            if (evt.targetGeo && (evt.geo.lat !== evt.targetGeo.lat || evt.geo.lon !== evt.targetGeo.lon)) {
+              new google.maps.Polyline({
+                path: [
+                  { lat: evt.geo.lat, lng: evt.geo.lon },
+                  { lat: evt.targetGeo.lat, lng: evt.targetGeo.lon }
+                ],
+                geodesic: true,
+                strokeColor: evt.severity === 'CRITICAL' ? '#ef4444' : '#06b6d4',
+                strokeOpacity: 0.8,
+                strokeWeight: 3,
+                map: gmap
+              });
+            }
+          });
+        } catch (e) {
+          console.warn("Google Maps Vector load issue, falling back to WebGL satellite mesh:", e);
+          initTacticalFallbackMap();
+        }
+      };
+
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initGmapCallback&v=weekly`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    function initTacticalFallbackMap() {
+      const container = document.getElementById("googleMapContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      document.getElementById("mapModeIndicator").textContent = "3D Real Estate Ballistic Mesh";
+      document.getElementById("mapModeSub").textContent = "WebGL Global Topology Controller Active";
+
+      const width = container.clientWidth || 500;
+      const height = container.clientHeight || 500;
+
+      fallbackScene = new THREE.Scene();
+      fallbackCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      fallbackCamera.position.set(0, 0, 28);
+
+      fallbackRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      fallbackRenderer.setSize(width, height);
+      fallbackRenderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(fallbackRenderer.domElement);
+
+      fallbackControls = new THREE.OrbitControls(fallbackCamera, fallbackRenderer.domElement);
+      fallbackControls.enableDamping = true;
+      fallbackControls.dampingFactor = 0.05;
+
+      const ambientLight = new THREE.AmbientLight(0x38bdf8, 0.5);
+      fallbackScene.add(ambientLight);
+      const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      sunLight.position.set(20, 10, 20);
+      fallbackScene.add(sunLight);
+
+      const earthRadius = 8;
+      const globeGeo = new THREE.SphereGeometry(earthRadius, 48, 48);
+      const globeMat = new THREE.MeshStandardMaterial({ color: 0x0a1128, roughness: 0.8 });
+      earthMesh = new THREE.Mesh(globeGeo, globeMat);
+      fallbackScene.add(earthMesh);
+
+      const wireframeMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, wireframe: true, transparent: true, opacity: 0.3 });
+      const wireMesh = new THREE.Mesh(globeGeo, wireframeMat);
+      earthMesh.add(wireMesh);
+
+      incidentData.forEach(evt => {
+        const pos = latLonToVector3(evt.geo.lat, evt.geo.lon, earthRadius + 0.1);
+        const markerGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        const markerMat = new THREE.MeshBasicMaterial({ color: evt.severity === 'CRITICAL' ? 0xef4444 : 0x06b6d4 });
+        const marker = new THREE.Mesh(markerGeo, markerMat);
+        marker.position.copy(pos);
+        earthMesh.add(marker);
+      });
+
+      createCurveArc(incidentData[0].geo, incidentData[0].targetGeo, 0xef4444, earthRadius);
+      createCurveArc(incidentData[2].geo, incidentData[2].targetGeo, 0x06b6d4, earthRadius);
+      createCurveArc(incidentData[4].geo, incidentData[4].targetGeo, 0xa855f7, earthRadius);
+
+      window.addEventListener("resize", onWindowResize);
+      animateFallbackMap();
+    }
+
+    function latLonToVector3(lat, lon, radius) {
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lon + 180) * (Math.PI / 180);
+      return new THREE.Vector3(
+        -(radius * Math.sin(phi) * Math.cos(theta)),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta)
+      );
+    }
+
+    function createCurveArc(geoA, geoB, color, radius) {
+      const vA = latLonToVector3(geoA.lat, geoA.lon, radius);
+      const vB = latLonToVector3(geoB.lat, geoB.lon, radius);
+      const mid = new THREE.Vector3().addVectors(vA, vB).multiplyScalar(0.5);
+      const dist = vA.distanceTo(vB);
+      mid.normalize().multiplyScalar(radius + dist * 0.28);
+
+      const curve = new THREE.QuadraticBezierCurve3(vA, mid, vB);
+      const points = curve.getPoints(50);
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.65 });
+      const arcLine = new THREE.Line(geometry, material);
+      earthMesh.add(arcLine);
+
+      const packetGeo = new THREE.SphereGeometry(0.2, 12, 12);
+      const packetMat = new THREE.MeshBasicMaterial({ color: color });
+      const packet = new THREE.Mesh(packetGeo, packetMat);
+      earthMesh.add(packet);
+
+      movingPackets.push({ mesh: packet, curve: curve, progress: Math.random() });
+    }
+
+    function animateFallbackMap() {
+      requestAnimationFrame(animateFallbackMap);
+      movingPackets.forEach(p => {
+        p.progress += 0.007;
+        if (p.progress > 1) p.progress = 0;
+        p.mesh.position.copy(p.curve.getPoint(p.progress));
+      });
+      if (fallbackControls) fallbackControls.update();
+      if (fallbackRenderer && fallbackScene && fallbackCamera) fallbackRenderer.render(fallbackScene, fallbackCamera);
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById("googleMapContainer");
+      if (!container) return;
+      if (fallbackCamera && fallbackRenderer) {
+        fallbackCamera.aspect = container.clientWidth / container.clientHeight;
+        fallbackCamera.updateProjectionMatrix();
+        fallbackRenderer.setSize(container.clientWidth, container.clientHeight);
+      }
+    }
+
+    // --- STEP & FLY-TO REAL ESTATE CAMERA CONTROLLER ---
+    function selectStep(index) {
+      currentStepIndex = index;
+      const evt = incidentData[index];
+
+      // Update Top Floating Badges
+      document.getElementById("stepCounter").textContent = `Hop ${index + 1}/${incidentData.length}`;
+      document.getElementById("activeHopBadge").textContent = `Hop ${index + 1}/${incidentData.length}`;
+      document.getElementById("activeTransferTitle").textContent = `${evt.sender} ➔ ${evt.receiver}`;
+      document.getElementById("activeTransferProtocol").textContent = `Protocol: ${evt.protocol} | Volume: ${evt.volume}`;
+      document.getElementById("globeFocusName").textContent = evt.geo.name;
+
+      // Update Diagnostics in Flow Diagram page
+      document.getElementById("flowSenderText").textContent = evt.sender;
+      document.getElementById("flowReceiverText").textContent = evt.receiver;
+      document.getElementById("flowVolumeText").textContent = evt.volume;
+      document.getElementById("selectedNodeBadge").textContent = evt.stage;
+      document.getElementById("graphExplainWhy").textContent = evt.summary;
+
+      // Camera Fly-to
+      if (gmap) {
+        gmap.panTo({ lat: evt.geo.lat, lng: evt.geo.lon });
+        gmap.setZoom(15);
+        gmap.setHeading((index * 60) % 360);
+      } else if (earthMesh) {
+        const phi = (90 - evt.geo.lat) * (Math.PI / 180);
+        const theta = (lon + 180) * (Math.PI / 180);
+        earthMesh.rotation.x = (phi - Math.PI / 2) * 0.4;
+        earthMesh.rotation.y = -theta + Math.PI / 2;
+      }
+
+      renderTimelineCards();
+    }
+
+    function stepCase(delta) {
+      let next = currentStepIndex + delta;
+      if (next < 0) next = incidentData.length - 1;
+      if (next >= incidentData.length) next = 0;
+      selectStep(next);
+    }
+
+    function toggleStoryPlayback() {
+      const btn = document.getElementById("btnPlayStory");
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        btn.innerHTML = `<i data-lucide="pause" class="w-3.5 h-3.5 fill-current"></i> Pause`;
+        btn.className = "px-2.5 py-1 bg-amber-600 hover:bg-amber-500 rounded text-white text-xs font-medium flex items-center gap-1";
+        playInterval = setInterval(() => stepCase(1), 3500);
+      } else {
+        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Play Route`;
+        btn.className = "px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 rounded text-white text-xs font-medium flex items-center gap-1";
+        clearInterval(playInterval);
+      }
+      lucide.createIcons();
+    }
+
+    // --- TIMELINE CARDS RENDERER WITH SENDER-TO-RECEIVER DETAILS ---
+    function renderTimelineCards() {
+      const container = document.getElementById("timelineCardsContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      incidentData.forEach((evt, idx) => {
+        const isSelected = idx === currentStepIndex;
+        const isCrit = evt.severity === "CRITICAL";
+
+        const card = document.createElement("div");
+        card.className = `cursor-pointer p-4 rounded-xl border transition space-y-2 ${
+          isSelected 
+            ? "bg-slate-800/95 border-cyan-500 shadow-xl shadow-cyan-950/40" 
+            : "bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-800/40"
+        }`;
+        
+        card.onclick = () => selectStep(idx);
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-mono text-slate-400 text-[11px]">${evt.time}</span>
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold ${
+              isCrit ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-cyan-950 text-cyan-300 border border-cyan-800'
+            }">
+              ${evt.stage}
+            </span>
+          </div>
+
+          <div class="font-bold text-xs text-white">${evt.technique}</div>
+
+          <!-- SENDER TO RECEIVER HIGHLIGHT -->
+          <div class="bg-black/60 p-2.5 rounded-lg border border-slate-800 font-mono text-[11px] space-y-1">
+            <div class="text-amber-400 flex items-center gap-1">
+              <span class="text-slate-500 uppercase font-bold text-[9px]">SENDER:</span> ${evt.sender}
+            </div>
+            <div class="text-cyan-400 flex items-center gap-1">
+              <span class="text-slate-500 uppercase font-bold text-[9px]">RECEIVER:</span> ${evt.receiver}
+            </div>
+            <div class="text-emerald-400 flex items-center justify-between pt-1 border-t border-slate-800/80 text-[10px]">
+              <span>Proto: ${evt.protocol}</span>
+              <span>Vol: ${evt.volume}</span>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-300 leading-relaxed">${evt.summary}</p>
+          <div class="text-[10px] text-slate-400 font-mono pt-1">Facility: ${evt.geo.name}</div>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // --- HOME OVERVIEW TABLE ---
+    function renderHomeOverview() {
+      const tableBody = document.getElementById("homeTimelineRows");
+      if (!tableBody) return;
+      tableBody.innerHTML = "";
+
+      incidentData.forEach(evt => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-900/60 transition";
+        tr.innerHTML = `
+          <td class="p-3 text-cyan-400 font-bold">${evt.id}</td>
+          <td class="p-3 text-amber-300 font-semibold">${evt.sender}</td>
+          <td class="p-3 text-cyan-300 font-semibold">${evt.receiver}</td>
+          <td class="p-3 text-slate-300">${evt.protocol} (${evt.volume})</td>
+          <td class="p-3 text-slate-400">${evt.geo.name}</td>
+          <td class="p-3 font-bold ${evt.severity === 'CRITICAL' ? 'text-red-400' : 'text-amber-400'}">${evt.severity}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      document.getElementById("homeChainCount").textContent = `${incidentData.length} Stages`;
+      document.getElementById("homeEvidenceCount").textContent = `${evidenceStore.length} Uploaded`;
+    }
+
+    // --- PDF COMPILER & EMAIL DISPATCH ---
+    async function generateAndSendIncidentPDF() {
+      if (!currentUser.email) {
+        alert("Please log in with a valid email address to receive the forensic dossier.");
+        return;
+      }
+
+      const btnTop = document.getElementById("btnDispatchTop");
+      btnTop.disabled = true;
+      btnTop.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Dispatching...`;
+      lucide.createIcons();
+
+      // Build & Download Local PDF
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFillColor(10, 15, 29);
+      doc.rect(0, 0, 210, 42, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(248, 113, 113);
+      doc.text("CHRONOSEC AI // FORENSIC INCIDENT DOSSIER", 14, 18);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(203, 213, 225);
+      doc.text(`INCIDENT ID: APT-8094 | CLASSIFICATION: CRITICAL`, 14, 27);
+      doc.text(`DATE GENERATED: ${new Date().toUTCString()}`, 14, 34);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42);
+      doc.text("INVESTIGATOR SIGN-OFF & DISPATCH RECIPIENT", 14, 52);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`Investigator: ${currentUser.username} (${currentUser.clearance})`, 14, 60);
+      doc.text(`Target Official Email: ${currentUser.email}`, 14, 66);
+
+      // Data transfer summary table in PDF
+      const tableData = incidentData.map(evt => [
+        evt.id,
+        evt.time,
+        evt.sender,
+        evt.receiver,
+        evt.protocol,
+        evt.volume
+      ]);
+
+      doc.autoTable({
+        startY: 75,
+        head: [['ID', 'Timestamp (UTC)', 'Data Sender', 'Data Receiver', 'Protocol', 'Volume']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 23, 42], textColor: [56, 189, 248] },
+        styles: { fontSize: 8 }
+      });
+
+      doc.save(`ChronoSec_Incident_APT-8094.pdf`);
+
+      // Send Real Email via Web3Forms API
+      try {
+        const emailBody = `
+CHRONOSEC AI - FORENSIC DATA TRANSFER BRIEFING
+======================================================
+INCIDENT: APT-8094
+INVESTIGATOR: ${currentUser.username} (${currentUser.clearance})
+DISPATCH RECIPIENT: ${currentUser.email}
+TIMESTAMP: ${new Date().toUTCString()}
+
+DATA TRANSFER PROGRESSION (WHO TRANSFERRED DATA TO WHOM):
+------------------------------------------------------
+1. [14:12:08 UTC]
+   SENDER: 203.0.113.195 (Bucharest, Romania)
+   RECEIVER: 192.168.10.45:443 (Frankfurt, Germany - edge-web-01)
+   PROTOCOL: HTTP POST /api/v1/upload (4.8 KB Buffer Overflow)
+
+2. [14:13:22 UTC]
+   SENDER: w3wp.exe (IIS Process)
+   RECEIVER: powershell.exe (User: www-data)
+   PROTOCOL: Local IPC Spawning (1.2 KB Encoded Payload)
+
+3. [14:18:45 UTC]
+   SENDER: 192.168.10.45 (edge-web-01 in Frankfurt)
+   RECEIVER: 192.168.1.250 (corp-dc-01 in Dallas Data Center)
+   PROTOCOL: Kerberos TGS-REQ (RC4 0x17 Ticket Granted)
+
+4. [14:31:10 UTC]
+   SENDER: 192.168.10.45 (edge-web-01)
+   RECEIVER: 192.168.20.12 (fin-srv-02 ADMIN$ Share in Dallas)
+   PROTOCOL: SMB Port 445 (142 KB Binary Payload Written)
+
+5. [14:48:52 UTC]
+   SENDER: 192.168.20.12 (fin-srv-02 in Dallas)
+   RECEIVER: 198.51.100.4 (St. Petersburg, Russia C2 Drop)
+   PROTOCOL: TLS Port 8443 (3.2 GB Confidential Data Egress)
+
+(High-resolution Forensic PDF report has also been downloaded to your workstation).
+`;
+
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({
+            access_key: "09ff0cb9-9520-4e0d-a3f2-1b15112e5eb9",
+            subject: `[ALERT] Forensic Data Transfer Report APT-8094 Dispatched to ${currentUser.username}`,
+            from_name: "ChronoSec AI SOC",
+            to_email: currentUser.email,
+            email: currentUser.email,
+            message: emailBody
+          })
+        });
+
+        const resData = await response.json();
+        showToast(resData.success ? `Incident Dossier delivered to ${currentUser.email} & PDF saved!` : `PDF saved locally!`);
+      } catch (err) {
+        showToast("PDF Dossier downloaded locally!");
+      } finally {
+        btnTop.disabled = false;
+        btnTop.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> Send Report to Email`;
+        lucide.createIcons();
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("dispatchToast");
+      document.getElementById("toastMessage").textContent = msg;
+      toast.classList.remove("translate-y-24", "opacity-0", "pointer-events-none");
+      toast.classList.add("translate-y-0", "opacity-100");
+      setTimeout(() => {
+        toast.classList.add("translate-y-24", "opacity-0", "pointer-events-none");
+        toast.classList.remove("translate-y-0", "opacity-100");
+      }, 5500);
+    }
+
+    // --- NAVIGATION & AUTH ---
+    function navigateTo(pageId) {
+      document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-cyan-600', 'text-white');
+        btn.classList.add('text-slate-400');
+      });
+
+      const targetPage = document.getElementById(`page-${pageId}`);
+      if (targetPage) targetPage.classList.remove('hidden');
+
+      const targetNav = document.getElementById(`nav-${pageId}`);
+      if (targetNav) {
+        targetNav.classList.add('bg-cyan-600', 'text-white');
+        targetNav.classList.remove('text-slate-400');
+      }
+
+      if (pageId === 'timeline') {
+        setTimeout(onWindowResize, 60);
+      }
+      lucide.createIcons();
+    }
+
+    function handleAuthLogin(e) {
+      e.preventDefault();
+      currentUser.username = document.getElementById("loginUsername").value.trim() || "Agent Alex Mercer";
+      currentUser.email = document.getElementById("loginEmail").value.trim();
+      currentUser.gmapsKey = document.getElementById("loginGmapsKey").value.trim();
+
+      const initials = currentUser.username.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "AM";
+      document.getElementById("userAvatarText").textContent = initials;
+      document.getElementById("profileAvatarBig").textContent = initials;
+      document.getElementById("navBarUsername").textContent = currentUser.username;
+      document.getElementById("profileUsername").textContent = currentUser.username;
+      document.getElementById("profileEmail").textContent = currentUser.email;
+
+      document.getElementById("auth-screen").classList.add("hidden");
+      document.getElementById("main-header").classList.remove("hidden");
+
+      initMapEngine();
+      navigateTo("home");
+    }
+
+    function handleLogout() {
+      document.getElementById("auth-screen").classList.remove("hidden");
+      document.getElementById("main-header").classList.add("hidden");
+      document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
+    }
+
+    // --- GRAPH SELECTION ---
+    function selectGraphNode(nodeKey) {
+      const mapping = {
+        attacker: 0,
+        gateway: 0,
+        web: 1,
+        dc: 2,
+        target: 3,
+        c2: 4
+      };
+      if (mapping[nodeKey] !== undefined) {
+        selectStep(mapping[nodeKey]);
+      }
+    }
+
+    function exportGraphData() {
+      const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(incidentData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", jsonStr);
+      downloadAnchor.setAttribute("download", "ChronoSec_Data_Transfers.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // --- EVIDENCE VAULT ---
+    function renderEvidenceGallery() {
+      const grid = document.getElementById("evidenceGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      evidenceStore.forEach(ev => {
+        const card = document.createElement("div");
+        card.className = "bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden shadow-md flex flex-col";
+        card.innerHTML = `
+          <div class="h-32 bg-black overflow-hidden relative">
+            <img src="${ev.img}" alt="${ev.title}" class="w-full h-full object-cover opacity-80 hover:opacity-100 transition" />
+            <span class="absolute top-2 right-2 px-2 py-0.5 rounded bg-slate-900/90 text-cyan-400 text-[10px] font-mono border border-slate-700">${ev.stage}</span>
+          </div>
+          <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+            <div>
+              <h4 class="text-xs font-bold text-white">${ev.title}</h4>
+              <p class="text-[11px] text-slate-400 mt-1 leading-normal">${ev.desc}</p>
+            </div>
+            <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-[10px] font-mono text-slate-500">
+              <span>ID: ${ev.id}</span>
+              <span class="text-emerald-400">Flow Verified</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      document.getElementById("evidenceCount").textContent = evidenceStore.length;
+      document.getElementById("homeEvidenceCount").textContent = `${evidenceStore.length} Uploaded`;
+      lucide.createIcons();
+    }
+
+    function addEvidenceItem() {
+      const title = document.getElementById("evidenceTitleInput").value.trim();
+      const stage = document.getElementById("evidenceStageInput").value;
+      const desc = document.getElementById("evidenceDescInput").value.trim();
+      const fileInput = document.getElementById("evidenceFileInput");
+
+      if (!title || !desc) {
+        alert("Please enter title and flow description.");
+        return;
+      }
+
+      let imgUrl = "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=60";
+      if (fileInput.files && fileInput.files[0]) {
+        imgUrl = URL.createObjectURL(fileInput.files[0]);
+      }
+
+      evidenceStore.push({
+        id: `EV-${100 + evidenceStore.length + 1}`,
+        title: title,
+        stage: stage,
+        desc: desc,
+        img: imgUrl
+      });
+
+      renderEvidenceGallery();
+      document.getElementById("evidenceTitleInput").value = "";
+      document.getElementById("evidenceDescInput").value = "";
+      document.getElementById("evidenceFileInput").value = "";
+
+      alert(`Evidence "${title}" saved! Click "Synthesize Chain from Evidence" to integrate.`);
+    }
+
+    function synthesizeChainFromEvidence() {
+      renderHomeOverview();
+      renderTimelineCards();
+      alert("Attack transfers successfully updated with uploaded evidence!");
+      navigateTo('timeline');
+    }
+
+    // --- INITIAL BOOTSTRAP ---
+    window.onload = () => {
+      renderTimelineCards();
+      renderHomeOverview();
+      renderEvidenceGallery();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
